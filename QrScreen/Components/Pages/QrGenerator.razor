@@ -1,0 +1,204 @@
+﻿@using IronSoftware.Drawing
+@using MixERP.Net.VCards
+@using MixERP.Net.VCards.Models
+@using MixERP.Net.VCards.Serializer
+@using MixERP.Net.VCards.Types
+
+<HeadContent>
+	<style>
+		label { font-weight: bold; }
+	</style>
+</HeadContent>
+
+<div class="content">
+	<div class="row my-1">
+		<div class="col-sm-4"> <label for="forecolor">Foreground Color:</label></div>
+		<div class="col-sm-8">
+			<TelerikColorPicker id="forecolor" @bind-Value="@Forecolor"
+													ValueFormat="@ColorFormat.Rgb">
+				<ColorPickerViews>
+					<ColorPickerPaletteView Colors="@ColorPalettePresets.Basic" />
+					<ColorPickerGradientView ShowOpacityEditor="false" />
+				</ColorPickerViews>
+			</TelerikColorPicker>
+		</div>
+	</div>
+
+	<div class="row my-1">
+		<div class="col-sm-4"><label for="backcolor">Background Color:</label></div>
+		<div class="col-sm-8">
+			<TelerikColorPicker Id="backcolor" @bind-Value="@Backcolor"
+													ValueFormat="@ColorFormat.Rgb">
+				<ColorPickerViews>
+					<ColorPickerPaletteView Colors="@ColorPalettePresets.Basic" />
+					<ColorPickerGradientView ShowOpacityEditor="false" />
+				</ColorPickerViews>
+			</TelerikColorPicker>
+		</div>
+	</div>
+
+	<div class="row my-1">
+		<div class="col-sm-4"><label for="ProfileImage">Logo:</label></div>
+		<div class="col-sm-8">
+			<InputFile id="ProfileImage" class="form-control"
+								 accept=".png,.jpg,.jpeg,.gif"
+								 OnChange="HandleLogo" />
+			@if (!string.IsNullOrEmpty(FileErrorMessage))
+			{
+				<div class="validation-message">@FileErrorMessage</div>
+			}
+		</div>
+	</div>
+</div>
+
+<QrCode VCard="@vcard" Forecolor="@Forecolor" Backcolor="@Backcolor" Logo="LogoImage" />
+
+<div>
+	My Contact Info:
+
+	<div class="row">
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="firstname">First Name:</label>
+				<input name="firstname" type="text" class="form-control" @bind="MyCard.FirstName" />
+			</div>
+		</div>
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="lastname">Last Name:</label>
+				<input name="lastname" type="text" class="form-control" @bind="MyCard.LastName" />
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-6">
+
+			<div class="form-group">
+				<label for="displayname">Display Name:</label>
+				<input name="displayname" type="text" class="form-control" @bind="MyCard.FormattedName" />
+			</div>
+
+		</div>
+
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="nickname">Nick Name:</label>
+				<input name="nickname" type="text" class="form-control" @bind="MyCard.NickName" />
+			</div>
+		</div>
+
+	</div>
+
+	<div class="row">
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="title">Title:</label>
+				<input name="title" type="text" class="form-control" @bind="MyCard.Title" />
+			</div>
+		</div>
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="organization">Organization:</label>
+				<input name="organization" type="text" class="form-control" @bind="MyCard.Organization" />
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="email">Email:</label>
+				<input name="email" type="email" class="form-control" @bind="Email" />
+			</div>
+		</div>
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="phone">Phone:</label>
+				<input name="phone" type="tel" class="form-control" @bind="Phone" />
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="form-group">
+				<label for="url">Web Address:</label>
+				<input name="url" type="url" class="form-control" @bind="Url" />
+			</div>
+		</div>
+	</div>
+
+	@* Add a row with a single text area for the Note field in the MyCard object *@
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="form-group">
+				<label for="note">Note:</label>
+				<textarea name="note" class="form-control" @bind="MyCard.Note"></textarea>
+			</div>
+		</div>
+	</div>
+
+</div>
+
+@code {
+
+	string QrTag = string.Empty;
+
+	string Forecolor = "rgb(0,0,0)";
+	string Backcolor = "rgb(255, 255, 255)";
+
+	string FileErrorMessage = string.Empty;
+
+	public VCard MyCard = new VCard
+		{
+			Version = VCardVersion.V4,
+			Kind = Kind.Individual,
+			Emails = new List<Email> { new Email { EmailAddress = "", Type = EmailType.Smtp } },
+			Telephones = new List<Telephone> { new Telephone { Number = "", Type = TelephoneType.Work } },
+		};
+
+	string vcard => MyCard.Serialize();
+
+	string Url {
+		get { return MyCard.Url?.ToString() ?? ""; }
+		set {
+			var valueToSet = value;
+			if (!valueToSet.StartsWith("http")) valueToSet = $"https://{valueToSet}";
+			MyCard.Url = new Uri(valueToSet); 
+		}
+	}
+
+	string Email
+	{
+		get { return MyCard.Emails.FirstOrDefault()?.EmailAddress ?? string.Empty; }
+		set { MyCard.Emails.FirstOrDefault().EmailAddress = value; }
+	}
+
+	string Phone
+	{
+		get { return MyCard.Telephones.FirstOrDefault()?.Number ?? string.Empty; }
+		set { MyCard.Telephones.FirstOrDefault().Number = value; }
+	}
+
+	byte[] LogoImage = [];
+
+	protected async Task HandleLogo(InputFileChangeEventArgs e)
+	{
+
+		FileErrorMessage = string.Empty;
+		var file = e.File;
+		if (file is null) return;
+
+		// check file size
+		if (file.Size > 1024 * 1024) {
+			FileErrorMessage = "Uploaded logo is too large.  Max file size 1MB";
+			return;
+		}
+
+		var stream = new StreamContent(file.OpenReadStream(1024 * 1024));
+		LogoImage = await stream.ReadAsByteArrayAsync();
+
+	}
+
+}

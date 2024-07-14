@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>a4350d25-b7fc-4a33-9da6-fd1b849cf423</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="IronQR" Version="2024.7.1" />
+    <PackageReference Include="MixERP.Net.VCards" Version="1.0.7" />
+    <PackageReference Include="Telerik.UI.for.Blazor" Version="6.0.2" />
+  </ItemGroup>
+
+</Project>

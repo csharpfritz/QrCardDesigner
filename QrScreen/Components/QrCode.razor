@@ -1,0 +1,107 @@
+﻿@using IronQr
+@using IronQr.Exceptions
+@using IronSoftware.Drawing
+@using System.Drawing
+@inject IConfiguration Configuration
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+	<div class="alert alert-warning my-3">
+		@ErrorMessage
+	</div>
+}
+else
+{
+	<img src="@QrDataSource" alt="Your VCard as a QR Code" class="my-3" />
+}
+
+@code {
+
+	public string QrDataSource { get; set; }
+
+	public string ErrorMessage { get; set; } = string.Empty;
+
+	[Parameter, EditorRequired]
+	public string Forecolor { get; set; } = string.Empty;
+
+	[Parameter, EditorRequired]
+	public string Backcolor { get; set; } = string.Empty;
+
+	[Parameter]
+	public byte[] Logo { get; set; } = [];
+
+	[Parameter]
+	public string VCard { get; set; }
+
+	protected override Task OnParametersSetAsync()
+	{
+
+		// Create QR Code
+		IronQr.License.LicenseKey = Configuration["IronQR_License"];
+
+		var myQr = QrWriter.Write(VCard, new QrOptions
+			{
+				ErrorCorrectionLevel = QrErrorCorrectionLevel.High,
+				Version = 20
+			});
+
+		var options = new QrStyleOptions
+			{
+				Logo = Logo.Length > 0
+						? new QrLogo
+						{
+							Bitmap = AnyBitmap.FromBytes(Logo)
+						}
+						: null,
+				Margins = 0,
+				Dimensions = 300,
+				Color = FromHtmlRgb(Forecolor),
+				BackgroundColor = FromHtmlRgb(Backcolor)
+			};
+
+
+		AnyBitmap bitmap = null;
+
+		try
+		{
+			bitmap = myQr.Save(options);
+			QrDataSource = $"data:{bitmap.MimeType};base64,{bitmap.ToString()}";
+			ErrorMessage = string.Empty;
+		}
+		catch (IronQrException ex)
+		{
+			ErrorMessage = "Colors selected do not have enough contrast to be detected by a camera.  Please modify the foreground or background color to update the QR Code";
+		}
+
+		return base.OnParametersSetAsync();
+
+	}
+
+
+	private static IronSoftware.Drawing.Color FromHtmlRgb(string rgb)
+	{
+
+		// convert the rgb(255, 1, 2, 3) syntax to a color using the FromArgb method
+		if (rgb.Contains("rgb("))
+		{
+			var parts = rgb.Split(',');
+			var r = int.Parse(parts[0].Replace("rgb(", ""));
+			var g = int.Parse(parts[1]);
+			var b = int.Parse(parts[2].Replace(")", ""));
+			return IronSoftware.Drawing.Color.FromArgb(r, g, b);
+		}
+		else if (rgb.Contains("rgba("))
+		{
+			var parts = rgb.Split(',');
+			var r = int.Parse(parts[0].Replace("rgba(", ""));
+			var g = int.Parse(parts[1]);
+			var b = int.Parse(parts[2]);
+			Console.WriteLine($"Setting color to ({r}, {g}, {b})");
+			return IronSoftware.Drawing.Color.FromArgb(r, g, b);
+		}
+
+		return IronSoftware.Drawing.Color.White;
+
+	}
+
+}
