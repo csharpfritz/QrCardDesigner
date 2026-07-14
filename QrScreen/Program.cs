@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
 	.AddInteractiveServerComponents();
 
+builder.Services.AddScoped<SessionCache>();
+
 builder.Services.AddTelerikBlazor();
 
 var app = builder.Build();
