@@ -1,0 +1,159 @@
+@using vCardLib.Enums
+@using vCardLib.Models
+@using vCardLib.Serialization
+@implements IDisposable
+
+
+<div>
+    My Contact Info:
+
+	<div class="row">
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="firstname">First Name:</label>
+				<input id="firstname" name="firstname" type="text" class="form-control" @bind="givenName"  />
+			</div>
+		</div>
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="lastname">Last Name:</label>
+				<input name="lastname" type="text" class="form-control" @bind="familyName" />
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-6">
+
+			<div class="form-group">
+				<label for="displayname">Display Name:</label>
+				<input name="displayname" type="text" class="form-control" />
+			</div>
+
+		</div>
+
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="nickname">Nickname:</label>
+				<input name="nickname" type="text" class="form-control" @bind="nickname" />
+			</div>
+		</div>
+
+	</div>
+
+	<div class="row">
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="title">Title:</label>
+				<input name="title" type="text" class="form-control" @bind="title" />
+			</div>
+		</div>
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="organization">Organization:</label>
+				<input name="organization" type="text" class="form-control" @bind="organization" />
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="email">Email:</label>
+				<input name="email" type="email" class="form-control" @bind="Email" />
+			</div>
+		</div>
+		<div class="col-sm-6">
+			<div class="form-group">
+				<label for="yourPhone">Phone:</label>
+				<input name="yourPhone" type="tel" class="form-control" @bind="Phone" />
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="form-group">
+				<label for="url">Web Address:</label>
+				<input name="url" type="url" class="form-control" @bind="Url" />
+			</div>
+		</div>
+	</div>
+
+	@* Add a row with a single text area for the Note field in the MyCard object *@
+	@* <div class="row">
+		<div class="col-sm-12">
+			<div class="form-group">
+				<label for="note">Note:</label>
+				<textarea name="note" class="form-control" @bind="MyCard.Note"></textarea>
+			</div>
+		</div>
+	</div> *@
+
+</div>
+
+@code {
+
+    string nickname
+    {
+        get { return SessionCache.GetFieldValue(VCardField.NickName); }
+        set { SessionCache.SetFieldValue(VCardField.NickName, value); }
+    }
+
+    [CascadingParameter(Name = "SessionCache")]
+    public required SessionCache SessionCache { 	get;set;	}
+
+    string title
+    {
+        get { return SessionCache.GetFieldValue(VCardField.Title); }
+        set { SessionCache.SetFieldValue(VCardField.Title, value); }
+    }
+
+    string organization
+    {
+        get { return SessionCache.GetFieldValue(VCardField.Organization); }
+        set { SessionCache.SetFieldValue(VCardField.Organization, value); }
+    }
+
+    string Url
+    {
+        get { return SessionCache.GetFieldValue(VCardField.Url); }
+        set { SessionCache.SetFieldValue(VCardField.Url, value); }
+    }
+
+
+    // 		MyCard.Name = new Name(familyName, givenName, null, null, null);
+
+    string givenName {
+        get { 
+            return SessionCache.GetFieldValue(VCardField.GivenName);
+        }
+        set { 
+					Console.WriteLine($"Setting givenName to: {value}");
+					SessionCache.SetFieldValue(VCardField.GivenName, value); 
+					}
+    }
+
+    string familyName { 
+        get { return SessionCache.GetFieldValue(VCardField.FamilyName); }
+        set { SessionCache.SetFieldValue(VCardField.FamilyName, value); }
+    }
+
+    string Email
+    {
+        get { return SessionCache.GetFieldValue(VCardField.Email); }
+        set { SessionCache.SetFieldValue(VCardField.Email, value); }
+    }
+
+    string Phone
+    {
+        get { return SessionCache.GetFieldValue(VCardField.Phone); }
+        set { SessionCache.SetFieldValue(VCardField.Phone, value); }
+    }
+
+    void IDisposable.Dispose()
+    {
+        return;
+    }
+
+}

@@ -1,3 +1,4 @@
+using QrScreen;
 using QrScreen.Components;
 
 var builder = WebApplication.CreateBuilder(args);

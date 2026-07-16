@@ -3,84 +3,151 @@
 @using vCardLib.Models
 @using vCardLib.Serialization
 @inject SessionCache SessionCache
+@implements IDisposable
 
 <HeadContent>
 	<style>
-			label {
-				font-weight: bold;
+		label {
+			font-weight: bold;
+		}
+
+		.qr-generator-grid {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			gap: 0.5rem 1rem;
+			align-items: start;
+		}
+
+		.qr-preview {
+			display: flex;
+			justify-content: center;
+			align-items: flex-start;
+		}
+
+		@@media (max-width: 767.98px) {
+			.qr-generator-grid {
+				grid-template-columns: 1fr;
+				grid-template-rows: auto;
 			}
+
+			.qr-preview {
+				grid-column: 1;
+				grid-row: auto;
+				justify-content: flex-start;
+			}
+		}
 	</style>
 </HeadContent>
 
 <div class="content">
-	<div class="row my-1">
-		<div class="col-sm-4"> <label for="forecolor">Foreground Color:</label></div>
-		<div class="col-sm-8">
-			<TelerikColorPicker id="forecolor" @bind-Value="@Forecolor" ValueFormat="@ColorFormat.Rgb">
-				<ColorPickerViews>
-					<ColorPickerPaletteView Colors="@ColorPalettePresets.Basic" />
-					<ColorPickerGradientView ShowOpacityEditor="false" />
-				</ColorPickerViews>
-			</TelerikColorPicker>
-		</div>
-	</div>
+	<div class="qr-generator-grid my-1">
+		<div>
+			@* Bootstrap tabstrip look for Content and Design *@
+			<ul class="nav nav-tabs mb-3" role="tablist">
+				<li class="nav-item" role="presentation">
+					<button type="button" role="tab" class="nav-link @(ActiveTab == "Content" ? "active" : "")" @onclick='() => ActiveTab = "Content"'>Content</button>
+				</li>
+				<li class="nav-item" role="presentation">
+					<button type="button" role="tab" class="nav-link @(ActiveTab == "Design" ? "active" : "")" @onclick='() => ActiveTab = "Design"'>Design</button>
+				</li>
+			</ul>
 
-	<div class="row my-1">
-		<div class="col-sm-4"><label for="backcolor">Background Color:</label></div>
-		<div class="col-sm-8">
-			<TelerikColorPicker Id="backcolor" @bind-Value="@Backcolor" ValueFormat="@ColorFormat.Rgb">
-				<ColorPickerViews>
-					<ColorPickerPaletteView Colors="@ColorPalettePresets.Basic" />
-					<ColorPickerGradientView ShowOpacityEditor="false" />
-				</ColorPickerViews>
-			</TelerikColorPicker>
-		</div>
-	</div>
-
-	<div class="row my-1">
-		<div class="col-sm-4"><label for="ProfileImage">Logo:</label></div>
-		<div class="col-sm-8">
-			<InputFile id="ProfileImage" class="form-control" accept=".png,.jpg,.jpeg,.gif" OnChange="HandleLogo" />
-			@if (!string.IsNullOrEmpty(FileErrorMessage))
+			@if (ActiveTab == "Content")
 			{
-				<div class="validation-message">@FileErrorMessage</div>
+				<CascadingValue Name="SessionCache" Value="@SessionCache">
+					<CardContent />
+				</CascadingValue>
 			}
+			else
+			{
+				<div class="row my-1">
+					<div class="col-sm-4"><label for="forecolor">Foreground Color:</label></div>
+					<div class="col-sm-8">
+						<TelerikColorPicker id="forecolor" @bind-Value="@Forecolor" ValueFormat="@ColorFormat.Rgb">
+							<ColorPickerViews>
+								<ColorPickerPaletteView Colors="@ColorPalettePresets.Basic" />
+								<ColorPickerGradientView ShowOpacityEditor="false" />
+							</ColorPickerViews>
+						</TelerikColorPicker>
+					</div>
+				</div>
+
+				<div class="row my-1">
+					<div class="col-sm-4"><label for="backcolor">Background Color:</label></div>
+					<div class="col-sm-8">
+						<TelerikColorPicker Id="backcolor" @bind-Value="@Backcolor" ValueFormat="@ColorFormat.Rgb">
+							<ColorPickerViews>
+								<ColorPickerPaletteView Colors="@ColorPalettePresets.Basic" />
+								<ColorPickerGradientView ShowOpacityEditor="false" />
+							</ColorPickerViews>
+						</TelerikColorPicker>
+					</div>
+				</div>
+
+				<div class="row my-1">
+					<div class="col-sm-4"><label for="ProfileImage">Logo:</label></div>
+					<div class="col-sm-8">
+						<InputFile id="ProfileImage" class="form-control" accept=".png,.jpg,.jpeg,.gif" OnChange="HandleLogo" />
+						@if (!string.IsNullOrEmpty(FileErrorMessage))
+						{
+							<div class="validation-message">@FileErrorMessage</div>
+						}
+					</div>
+				</div>
+			}
+		</div>
+
+		@* QR preview always shown in right column *@
+		<div class="qr-preview">
+			<QrCode VCard="@SessionCache.VCard" Forecolor="@Forecolor" Backcolor="@Backcolor" Logo="LogoImage" />
 		</div>
 	</div>
 </div>
 
-<QrCode VCard="@SessionCache.VCard" Forecolor="@Forecolor" Backcolor="@Backcolor" Logo="LogoImage" />
-
-<CascadingValue Name="SessionCache" Value="@SessionCache">
-	<CardContent />
-</CascadingValue>
-
 @code {
 
-	string Forecolor = "rgb(0,0,0)";
-	string Backcolor = "rgb(255, 255, 255)";
+    string Forecolor = "rgb(0,0,0)";
+    string Backcolor = "rgb(255, 255, 255)";
 
-	string FileErrorMessage = string.Empty;
-	
-	byte[] LogoImage = [];
+    string FileErrorMessage = string.Empty;
+    byte[] LogoImage = [];
 
-	protected async Task HandleLogo(InputFileChangeEventArgs e)
-	{
+	string ActiveTab = "Content";
 
-		FileErrorMessage = string.Empty;
-		var file = e.File;
-		if (file is null) return;
+    protected override void OnParametersSet()
+    {
+		SessionCache.OnFieldChanged += SessionCache_OnFieldChanged;
+        base.OnParametersSet();
+    }
 
-		// check file size
-		if (file.Size > 1024 * 1024)
-		{
-			FileErrorMessage = "Uploaded logo is too large.  Max file size 1MB";
-			return;
-		}
+    protected async Task HandleLogo(InputFileChangeEventArgs e)
+    {
 
-		var stream = new StreamContent(file.OpenReadStream(1024 * 1024));
-		LogoImage = await stream.ReadAsByteArrayAsync();
+        FileErrorMessage = string.Empty;
+        var file = e.File;
+        if (file is null) return;
 
-	}
+        // check file size
+        if (file.Size > 1024 * 1024)
+        {
+            FileErrorMessage = "Uploaded logo is too large.  Max file size 1MB";
+            return;
+        }
+
+        var stream = new StreamContent(file.OpenReadStream(1024 * 1024));
+        LogoImage = await stream.ReadAsByteArrayAsync();
+
+    }
+
+    void IDisposable.Dispose()
+    {
+        // Unsubscribe from the event when the component is disposed
+        SessionCache.OnFieldChanged -= SessionCache_OnFieldChanged;
+    }
+
+    private void SessionCache_OnFieldChanged(object sender, VCardField e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
 
 }
