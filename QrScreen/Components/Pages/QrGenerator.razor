@@ -85,6 +85,18 @@
 				</div>
 
 				<div class="row my-1">
+					<div class="col-sm-4"><label for="markercolor">Marker Color:</label></div>
+					<div class="col-sm-8">
+						<TelerikColorPicker Id="markercolor" @bind-Value="@MarkerColor" ValueFormat="@ColorFormat.Rgb">
+							<ColorPickerViews>
+								<ColorPickerPaletteView Colors="@ColorPalettePresets.Basic" />
+								<ColorPickerGradientView ShowOpacityEditor="false" />
+							</ColorPickerViews>
+						</TelerikColorPicker>
+					</div>
+				</div>
+
+				<div class="row my-1">
 					<div class="col-sm-4"><label for="ProfileImage">Logo:</label></div>
 					<div class="col-sm-8">
 						<InputFile id="ProfileImage" class="form-control" accept=".png,.jpg,.jpeg,.gif" OnChange="HandleLogo" />
@@ -99,7 +111,11 @@
 
 		@* QR preview always shown in right column *@
 		<div class="qr-preview">
-			<QrCode VCard="@SessionCache.VCard" Forecolor="@Forecolor" Backcolor="@Backcolor" Logo="LogoImage" />
+			<FritzQrCode Value="@SessionCache.VCard" Size="300" 
+				ForegroundColor="@Forecolor" BackgroundColor="@Backcolor" MarkerColor="@MarkerColor"
+				Logo="LogoImage" LogoMimeType="@LogoMimeType" />
+			@* Previous Telerik-based renderer, kept for side-by-side comparison: *@
+			@* <QrCode VCard="@SessionCache.VCard" Forecolor="@Forecolor" Backcolor="@Backcolor" Logo="LogoImage" /> *@
 		</div>
 	</div>
 </div>
@@ -108,9 +124,11 @@
 
     string Forecolor = "rgb(0,0,0)";
     string Backcolor = "rgb(255, 255, 255)";
+    string MarkerColor = "rgb(0,0,0)";
 
     string FileErrorMessage = string.Empty;
     byte[] LogoImage = [];
+    string LogoMimeType = "image/png";
 
 	string ActiveTab = "Content";
 
@@ -136,6 +154,7 @@
 
         var stream = new StreamContent(file.OpenReadStream(1024 * 1024));
         LogoImage = await stream.ReadAsByteArrayAsync();
+        LogoMimeType = file.ContentType;
 
     }
 

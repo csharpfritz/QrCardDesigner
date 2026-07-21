@@ -1,0 +1,178 @@
+@using QRCoder
+@using QrScreen.Components.FritzQr.Models
+@using QrScreen.Components.FritzQr.Encoding
+@using QrScreen.Components.FritzQr.Rendering
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+	<div class="alert alert-warning my-3">
+		@ErrorMessage
+	</div>
+}
+else
+{
+	@if (ContrastWarnings.Count > 0)
+	{
+		<div class="alert alert-warning my-2">
+			<ul class="mb-0 ps-3">
+				@foreach (var warning in ContrastWarnings)
+				{
+					<li>@warning</li>
+				}
+			</ul>
+		</div>
+	}
+
+	if (!string.IsNullOrEmpty(_svgMarkup))
+	{
+		<div class="fritz-qr-code" style="width:@(Size)px;height:@(Size)px;">
+			@((MarkupString)_svgMarkup)
+		</div>
+	}
+}
+
+@code {
+
+	private string? _svgMarkup;
+
+	public string ErrorMessage { get; set; } = string.Empty;
+
+	/// <summary>Non-blocking warnings raised when a color pair's contrast falls below <see cref="MinimumContrastRatio"/>.</summary>
+	public List<string> ContrastWarnings { get; } = new();
+
+	/// <summary>The payload to encode (URL, vCard, plain text, etc.).</summary>
+	[Parameter, EditorRequired]
+	public string Value { get; set; } = string.Empty;
+
+	[Parameter]
+	public int Size { get; set; } = 300;
+
+	[Parameter]
+	public string ForegroundColor { get; set; } = "#000000";
+
+	[Parameter]
+	public string BackgroundColor { get; set; } = "#FFFFFF";
+
+	[Parameter]
+	public ModuleShape DataModuleShape { get; set; } = ModuleShape.Square;
+
+	/// <summary>Independent shape/color styling for each of the 3 finder pattern markers. Takes precedence over <see cref="MarkerColor"/> when set.</summary>
+	[Parameter]
+	public FinderStyles? FinderStyles { get; set; }
+
+	/// <summary>
+	/// Simple single-color override for all 3 finder pattern markers (outer ring + inner eye).
+	/// Defaults to <see cref="ForegroundColor"/> when not set. Ignored if <see cref="FinderStyles"/> is provided.
+	/// </summary>
+	[Parameter]
+	public string? MarkerColor { get; set; }
+
+	[Parameter]
+	public QRCodeGenerator.ECCLevel ErrorCorrectionLevel { get; set; } = QRCodeGenerator.ECCLevel.Q;
+
+	[Parameter]
+	public int QuietZoneModules { get; set; } = 4;
+
+	/// <summary>
+	/// Minimum acceptable WCAG-style contrast ratio (1-21) between the background color and both
+	/// the foreground and finder marker colors. Colors falling below this add a warning to
+	/// <see cref="ContrastWarnings"/> without blocking rendering.
+	/// </summary>
+	[Parameter]
+	public double MinimumContrastRatio { get; set; } = ColorContrastValidator.DefaultMinimumRatio;
+
+	/// <summary>Optional logo image bytes to embed in the center of the code.</summary>
+	[Parameter]
+	public byte[]? Logo { get; set; }
+
+	[Parameter]
+	public string LogoMimeType { get; set; } = "image/png";
+
+	/// <summary>Requested logo size as a % of the code's width; clamped to a safe max based on <see cref="ErrorCorrectionLevel"/>.</summary>
+	[Parameter]
+	public double LogoSizePercent { get; set; } = 20;
+
+	[Parameter]
+	public double LogoPaddingPercent { get; set; } = 10;
+
+	/// <summary>Color of the knockout area behind the logo. Defaults to <see cref="BackgroundColor"/> when null.</summary>
+	[Parameter]
+	public string? LogoBackgroundColor { get; set; }
+
+	protected override void OnParametersSet()
+	{
+		ErrorMessage = string.Empty;
+		ContrastWarnings.Clear();
+		_svgMarkup = null;
+
+		var resolvedFinderStyles = FinderStyleResolver.Resolve(FinderStyles, MarkerColor, ForegroundColor);
+		CheckContrast(resolvedFinderStyles);
+
+		if (string.IsNullOrWhiteSpace(Value))
+			return;
+
+		try
+		{
+			var matrix = QrMatrixBuilder.Build(Value, ErrorCorrectionLevel);
+			var options = new FritzQrRenderOptions
+			{
+				ForegroundColor = ForegroundColor,
+				BackgroundColor = BackgroundColor,
+				DataModuleShape = DataModuleShape,
+				FinderStyles = resolvedFinderStyles,
+				QuietZoneModules = QuietZoneModules,
+				Logo = Logo is { Length: > 0 }
+					? new LogoOptions
+					{
+						ImageBytes = Logo,
+						MimeType = LogoMimeType,
+						SizePercent = LogoSizePercent,
+						PaddingPercent = LogoPaddingPercent,
+						BackgroundColor = LogoBackgroundColor
+					}
+					: null
+			};
+
+			_svgMarkup = QrSvgRenderer.Render(matrix, options);
+		}
+		catch (Exception ex)
+		{
+			ErrorMessage = $"Unable to generate QR code: {ex.Message}";
+		}
+	}
+
+	private void CheckContrast(FinderStyles finderStyles)
+	{
+		WarnIfLowContrast("background and foreground", BackgroundColor, ForegroundColor);
+
+		var markerColors = new[]
+		{
+			finderStyles.TopLeft.OuterColor, finderStyles.TopLeft.InnerColor,
+			finderStyles.TopRight.OuterColor, finderStyles.TopRight.InnerColor,
+			finderStyles.BottomLeft.OuterColor, finderStyles.BottomLeft.InnerColor
+		}.Distinct();
+
+		foreach (var markerColor in markerColors)
+		{
+			WarnIfLowContrast("background and finder marker", BackgroundColor, markerColor);
+		}
+	}
+
+	private void WarnIfLowContrast(string description, string colorA, string colorB)
+	{
+		try
+		{
+			double ratio = ColorContrastValidator.CalculateContrastRatio(colorA, colorB);
+			if (ratio < MinimumContrastRatio)
+			{
+				ContrastWarnings.Add(
+					$"Low contrast between {description} ({colorA} vs {colorB}): ratio is {ratio:F1}:1, recommended at least {MinimumContrastRatio:F1}:1.");
+			}
+		}
+		catch (FormatException)
+		{
+			// Unrecognized color format - skip contrast validation rather than blocking rendering.
+		}
+	}
+
+}

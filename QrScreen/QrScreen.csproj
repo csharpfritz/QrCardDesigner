@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="QRCoder" Version="1.8.0" />
     <PackageReference Include="Telerik.UI.for.Blazor" Version="6.0.2" />
     <PackageReference Include="vCardLib.dll" Version="6.3.0" />
   </ItemGroup>
