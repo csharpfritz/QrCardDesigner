@@ -123,6 +123,16 @@ public static class QrSvgRenderer
 				: (style.InnerShape, style.InnerColor);
 		}
 
+		if (role == ModuleRole.Timing)
+		{
+			return (options.TimingModuleShape ?? options.DataModuleShape, options.TimingModuleColor ?? options.ForegroundColor);
+		}
+
+		if (role == ModuleRole.Alignment)
+		{
+			return (options.AlignmentModuleShape ?? options.DataModuleShape, options.AlignmentModuleColor ?? options.ForegroundColor);
+		}
+
 		return (options.DataModuleShape, options.ForegroundColor);
 	}
 

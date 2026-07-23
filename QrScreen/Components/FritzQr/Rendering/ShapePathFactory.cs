@@ -5,9 +5,7 @@ using QrScreen.Components.FritzQr.Models;
 namespace QrScreen.Components.FritzQr.Rendering;
 
 /// <summary>
-/// Produces the SVG markup fragment for a single module shape. Also exposes a generic
-/// regular-polygon point generator, reserved for future shapes (pentagon, hexagon, star, etc.)
-/// that aren't implemented yet.
+/// Produces the SVG markup fragment for a single module shape.
 /// </summary>
 public static class ShapePathFactory
 {
@@ -15,6 +13,13 @@ public static class ShapePathFactory
 	{
 		ModuleShape.Circle => CreateCircle(x, y, size, color),
 		ModuleShape.RoundedSquare => CreateRoundedSquare(x, y, size, color),
+		ModuleShape.Diamond => CreateRegularPolygon(x, y, size, color, 4),
+		ModuleShape.Triangle => CreateRegularPolygon(x, y, size, color, 3),
+		ModuleShape.Pentagon => CreateRegularPolygon(x, y, size, color, 5),
+		ModuleShape.Hexagon => CreateRegularPolygon(x, y, size, color, 6),
+		ModuleShape.Octagon => CreateRegularPolygon(x, y, size, color, 8),
+		ModuleShape.Star => CreateStar(x, y, size, color),
+		ModuleShape.Dot => CreateDot(x, y, size, color),
 		_ => CreateSquare(x, y, size, color)
 	};
 
@@ -35,10 +40,46 @@ public static class ShapePathFactory
 		return $"<circle cx=\"{FormatNumber(cx)}\" cy=\"{FormatNumber(cy)}\" r=\"{FormatNumber(r)}\" fill=\"{SanitizeColor(color)}\" />";
 	}
 
+	public static string CreateDot(double x, double y, double size, string color)
+	{
+		double r = size * 0.3;
+		double cx = x + (size / 2);
+		double cy = y + (size / 2);
+		return $"<circle cx=\"{FormatNumber(cx)}\" cy=\"{FormatNumber(cy)}\" r=\"{FormatNumber(r)}\" fill=\"{SanitizeColor(color)}\" />";
+	}
+
+	public static string CreateRegularPolygon(double x, double y, double size, string color, int sides, double rotationDegrees = -90)
+	{
+		double radius = size / 2;
+		double cx = x + radius;
+		double cy = y + radius;
+		string points = GetRegularPolygonPoints(cx, cy, radius, sides, rotationDegrees);
+		return $"<polygon points=\"{points}\" fill=\"{SanitizeColor(color)}\" />";
+	}
+
+	public static string CreateStar(double x, double y, double size, string color)
+	{
+		double outerRadius = size / 2;
+		double innerRadius = outerRadius * 0.382;
+		double cx = x + outerRadius;
+		double cy = y + outerRadius;
+
+		var points = new string[10];
+		double rotationRadians = -90 * Math.PI / 180.0;
+		for (int i = 0; i < 10; i++)
+		{
+			double radius = i % 2 == 0 ? outerRadius : innerRadius;
+			double angle = rotationRadians + (Math.PI * i / 5);
+			double px = cx + (radius * Math.Cos(angle));
+			double py = cy + (radius * Math.Sin(angle));
+			points[i] = $"{FormatNumber(px)},{FormatNumber(py)}";
+		}
+
+		return $"<polygon points=\"{string.Join(" ", points)}\" fill=\"{SanitizeColor(color)}\" />";
+	}
+
 	/// <summary>
-	/// Computes the vertex points of a regular N-sided polygon centered at (cx, cy). Not wired
-	/// up to a <see cref="ModuleShape"/> yet, but kept generic so pentagon/hexagon/star/etc. can
-	/// be added later without new per-shape math.
+	/// Computes the vertex points of a regular N-sided polygon centered at (cx, cy).
 	/// </summary>
 	public static string GetRegularPolygonPoints(double cx, double cy, double radius, int sides, double rotationDegrees = -90)
 	{

@@ -56,6 +56,18 @@ else
 	[Parameter]
 	public ModuleShape DataModuleShape { get; set; } = ModuleShape.Square;
 
+	[Parameter]
+	public ModuleShape? TimingModuleShape { get; set; }
+
+	[Parameter]
+	public string? TimingModuleColor { get; set; }
+
+	[Parameter]
+	public ModuleShape? AlignmentModuleShape { get; set; }
+
+	[Parameter]
+	public string? AlignmentModuleColor { get; set; }
+
 	/// <summary>Independent shape/color styling for each of the 3 finder pattern markers. Takes precedence over <see cref="MarkerColor"/> when set.</summary>
 	[Parameter]
 	public FinderStyles? FinderStyles { get; set; }
@@ -119,6 +131,10 @@ else
 				ForegroundColor = ForegroundColor,
 				BackgroundColor = BackgroundColor,
 				DataModuleShape = DataModuleShape,
+				TimingModuleShape = TimingModuleShape,
+				TimingModuleColor = TimingModuleColor,
+				AlignmentModuleShape = AlignmentModuleShape,
+				AlignmentModuleColor = AlignmentModuleColor,
 				FinderStyles = resolvedFinderStyles,
 				QuietZoneModules = QuietZoneModules,
 				Logo = Logo is { Length: > 0 }
@@ -150,11 +166,13 @@ else
 			finderStyles.TopLeft.OuterColor, finderStyles.TopLeft.InnerColor,
 			finderStyles.TopRight.OuterColor, finderStyles.TopRight.InnerColor,
 			finderStyles.BottomLeft.OuterColor, finderStyles.BottomLeft.InnerColor
-		}.Distinct();
+		}
+		.Concat(new[] { TimingModuleColor ?? ForegroundColor, AlignmentModuleColor ?? ForegroundColor })
+		.Distinct();
 
 		foreach (var markerColor in markerColors)
 		{
-			WarnIfLowContrast("background and finder marker", BackgroundColor, markerColor);
+			WarnIfLowContrast("background and styled module", BackgroundColor, markerColor);
 		}
 	}
 

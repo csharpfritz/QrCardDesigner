@@ -1,3 +1,4 @@
+using QrScreen.Components.FritzQr.Models;
 using QrScreen.Components.FritzQr.Rendering;
 
 namespace QrScreen.Tests.FritzQr;
@@ -34,6 +35,38 @@ public class ShapePathFactoryTests
 		// center = origin + radius; radius = size / 2
 		Assert.Contains("cx=\"5\"", markup);
 		Assert.Contains("cy=\"7\"", markup);
+		Assert.Contains("r=\"3\"", markup);
+	}
+
+	[Theory]
+	[InlineData(ModuleShape.Diamond, 4)]
+	[InlineData(ModuleShape.Triangle, 3)]
+	[InlineData(ModuleShape.Pentagon, 5)]
+	[InlineData(ModuleShape.Hexagon, 6)]
+	[InlineData(ModuleShape.Octagon, 8)]
+	public void CreateMarkup_UsesPolygonForRegularPolygonShapes(ModuleShape shape, int expectedPoints)
+	{
+		string markup = ShapePathFactory.CreateMarkup(shape, 0, 0, 10, "#000000");
+
+		Assert.Contains("<polygon", markup);
+		Assert.Equal(expectedPoints, ExtractPoints(markup).Length);
+	}
+
+	[Fact]
+	public void CreateMarkup_UsesStarPolygonForStarShape()
+	{
+		string markup = ShapePathFactory.CreateMarkup(ModuleShape.Star, 0, 0, 10, "#000000");
+
+		Assert.Contains("<polygon", markup);
+		Assert.Equal(10, ExtractPoints(markup).Length);
+	}
+
+	[Fact]
+	public void CreateMarkup_UsesSmallerCircleForDotShape()
+	{
+		string markup = ShapePathFactory.CreateMarkup(ModuleShape.Dot, 0, 0, 10, "#000000");
+
+		Assert.Contains("<circle", markup);
 		Assert.Contains("r=\"3\"", markup);
 	}
 
@@ -89,5 +122,12 @@ public class ShapePathFactoryTests
 		Assert.DoesNotContain("<script>", square);
 		Assert.DoesNotContain("<script>", circle);
 		Assert.DoesNotContain("<script>", rounded);
+	}
+
+	private static string[] ExtractPoints(string markup)
+	{
+		int start = markup.IndexOf("points=\"", StringComparison.Ordinal) + "points=\"".Length;
+		int end = markup.IndexOf('"', start);
+		return markup[start..end].Split(' ', StringSplitOptions.RemoveEmptyEntries);
 	}
 }

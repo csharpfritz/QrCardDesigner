@@ -9,6 +9,14 @@ public sealed class FritzQrRenderOptions
 
 	public ModuleShape DataModuleShape { get; set; } = ModuleShape.Square;
 
+	public ModuleShape? TimingModuleShape { get; set; }
+
+	public string? TimingModuleColor { get; set; }
+
+	public ModuleShape? AlignmentModuleShape { get; set; }
+
+	public string? AlignmentModuleColor { get; set; }
+
 	public FinderStyles FinderStyles { get; set; } = new();
 
 	/// <summary>Quiet zone width, in modules, rendered around the symbol.</summary>

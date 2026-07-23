@@ -1,4 +1,5 @@
-﻿@using static Telerik.Blazor.ThemeConstants
+﻿@using QrScreen.Components.FritzQr.Models
+@using static Telerik.Blazor.ThemeConstants
 @using vCardLib.Enums
 @using vCardLib.Models
 @using vCardLib.Serialization
@@ -106,13 +107,30 @@
 						}
 					</div>
 				</div>
+
+				@* Marker designs choices *@
+				<div class="row my-1">
+					<div class="col-sm-4"><label for="markerdesign">Marker Design:</label></div>
+					<div class="col-sm-8">
+						<select Id="markerdesign" @bind="@MarkerDesign">
+							@foreach (var design in Enum.GetValues<ModuleShape>())
+							{
+								<option value="@design">@design</option>
+							}
+						</select>
+					</div>
+				</div>
+
+
+
 			}
 		</div>
 
 		@* QR preview always shown in right column *@
 		<div class="qr-preview">
-			<FritzQrCode Value="@SessionCache.VCard" Size="300" 
+			<FritzQrCode Value="@SessionCache.VCard" Size="300" FinderStyles="@FinderStyle"
 				ForegroundColor="@Forecolor" BackgroundColor="@Backcolor" MarkerColor="@MarkerColor"
+				DataModuleShape="@MarkerDesign" AlignmentModuleShape="@MarkerDesign" TimingModuleShape="@MarkerDesign"
 				Logo="LogoImage" LogoMimeType="@LogoMimeType" />
 			@* Previous Telerik-based renderer, kept for side-by-side comparison: *@
 			@* <QrCode VCard="@SessionCache.VCard" Forecolor="@Forecolor" Backcolor="@Backcolor" Logo="LogoImage" /> *@
@@ -130,7 +148,30 @@
     byte[] LogoImage = [];
     string LogoMimeType = "image/png";
 
+		ModuleShape MarkerDesign { get; set; } = ModuleShape.Square;
+
 	string ActiveTab = "Content";
+
+		FinderStyles FinderStyle => new() {
+			TopLeft = new FinderCornerStyle { 
+				OuterShape = MarkerDesign, 
+				OuterColor = MarkerColor,
+				InnerColor = MarkerColor,
+				InnerShape = MarkerDesign,
+			},
+			TopRight = new FinderCornerStyle { 
+				OuterShape = MarkerDesign,
+				OuterColor = MarkerColor,
+				InnerColor = MarkerColor,
+				InnerShape = MarkerDesign
+			},
+			BottomLeft = new FinderCornerStyle { 
+				OuterShape = MarkerDesign, 
+				OuterColor = MarkerColor,
+				InnerColor = MarkerColor,
+				InnerShape = MarkerDesign
+			},
+		};
 
     protected override void OnParametersSet()
     {

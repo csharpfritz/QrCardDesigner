@@ -9,6 +9,12 @@ public enum ModuleRole
 	/// <summary>A normal encoded data/ECC module (or an unset module within a finder pattern's separator ring).</summary>
 	Data,
 
+	/// <summary>The alternating row/column of timing modules that runs between finder patterns.</summary>
+	Timing,
+
+	/// <summary>A 5x5 alignment pattern used in versions 2+.</summary>
+	Alignment,
+
 	/// <summary>The 1-module-thick outer ring of one of the 3 finder pattern markers.</summary>
 	FinderOuter,
 

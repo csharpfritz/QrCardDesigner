@@ -57,6 +57,50 @@ public class QrSvgRendererTests
 	}
 
 	[Fact]
+	public void BuildElements_UsesTimingStyleForTimingModules()
+	{
+		var matrix = BuildTestMatrix((modules, roles) =>
+		{
+			modules[10, 6] = true;
+			roles[10, 6] = ModuleRole.Timing;
+		});
+
+		var options = new FritzQrRenderOptions
+		{
+			TimingModuleShape = ModuleShape.Hexagon,
+			TimingModuleColor = "#654321"
+		};
+
+		var elements = QrSvgRenderer.BuildElements(matrix, options);
+
+		var element = Assert.Single(elements);
+		Assert.Equal(ModuleShape.Hexagon, element.Shape);
+		Assert.Equal("#654321", element.Color);
+	}
+
+	[Fact]
+	public void BuildElements_UsesAlignmentStyleForAlignmentModules()
+	{
+		var matrix = BuildTestMatrix((modules, roles) =>
+		{
+			modules[10, 10] = true;
+			roles[10, 10] = ModuleRole.Alignment;
+		});
+
+		var options = new FritzQrRenderOptions
+		{
+			AlignmentModuleShape = ModuleShape.Star,
+			AlignmentModuleColor = "#abcdef"
+		};
+
+		var elements = QrSvgRenderer.BuildElements(matrix, options);
+
+		var element = Assert.Single(elements);
+		Assert.Equal(ModuleShape.Star, element.Shape);
+		Assert.Equal("#abcdef", element.Color);
+	}
+
+	[Fact]
 	public void BuildElements_AppliesIndependentStylePerFinderCorner()
 	{
 		var matrix = BuildTestMatrix((modules, roles) =>
@@ -95,6 +139,30 @@ public class QrSvgRendererTests
 		var bottomLeft = Assert.Single(elements, e => e.X == 0 && e.Y == Size - 1);
 		Assert.Equal(ModuleShape.RoundedSquare, bottomLeft.Shape);
 		Assert.Equal("#333333", bottomLeft.Color);
+	}
+
+	[Fact]
+	public void BuildElements_AllowsExpandedFinderMarkerShapes()
+	{
+		var matrix = BuildTestMatrix((modules, roles) =>
+		{
+			modules[0, 0] = true;
+			roles[0, 0] = ModuleRole.FinderOuter;
+		});
+
+		var options = new FritzQrRenderOptions
+		{
+			FinderStyles = new FinderStyles
+			{
+				TopLeft = new FinderCornerStyle { OuterShape = ModuleShape.Pentagon, OuterColor = "#111111" }
+			}
+		};
+
+		var elements = QrSvgRenderer.BuildElements(matrix, options);
+
+		var element = Assert.Single(elements);
+		Assert.Equal(ModuleShape.Pentagon, element.Shape);
+		Assert.Equal("#111111", element.Color);
 	}
 
 	[Fact]
@@ -195,4 +263,3 @@ public class QrSvgRendererTests
 		Assert.DoesNotContain("text/html", svg);
 	}
 }
-
